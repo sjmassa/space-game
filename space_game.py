@@ -1,59 +1,104 @@
 #!/usr/bin/env python
 # coding: utf-8
 
-# In[1]:
+# ### saving game needs to be done
+# ### Room inventory needs to be figured out
+# ### Make initial save file/dialog
+# ### Create combat system
+
+# In[73]:
 
 
+# General imports
 import sys
 import os
 import time
 import random
 import csv
 from numpy import arange
-import items
-# import combat
-# import termcolor
 
-ckey = 0
-time_var = 0
+# Game imports
+from items import backpack
+from items import armor
+from items import weapon
+from items import consumable
+
+
+# ### Saved Variables
+
+# In[74]:
+
+
+# General variables
 user_name = ''
+player_game_state = 0
+player_input = 0
+
+# Health
+current_health = 50
+max_health = 100
+medpack_plus = 0
+medpack_plusplus = 0
+
+# Energy
+current_energy = 50
+max_energy = 100
+booster_plus = 0
+booster_plusplus = 0
+
+# Keys
+equip_keys = []
+
+# Equipment Variables
+equip_weapon = 'Fists'
+equip_armor = 'None'
+equip_pack = 'None'
+
+# Inventory variables
+inventory = {}
+inv_default = 6
+inv_max = inv_default + backpack[equip_pack]
+
+# Map
+current_map = 'maps\map_start.txt'
+
+help_options = ['help', 'h', '?', 'stat', 'inv', 'map', 'log', 'clear', 'back', 'repeat', 'save', 'exit']
 
 
-# General Funtions
+# ### General Funtions
 
-# In[2]:
+# In[75]:
 
 
-def clr_scr():
-    os.system('cls')
-    print("\n\n")
+def clrscr():
+    try:
+        os.system('cls')
+    except Exception:
+        pass
+    print('\n')
     time.sleep(2)
+    return
 
 def skip_line(x):
     line = "\n"
     print(line * x)
 
-def print_text(x, y):
-    if x != 0:
-        for letter in x:
+def print_text(text, speed):
+    if text != 0:
+        for letter in text:
             print(letter, end="", flush=True)
-            time.sleep(0)
-    else:
-        if y != 0:
-            for letter in y:
-                print(letter, end="", flush=True)
-                time.sleep(0)
+            time.sleep(speed)
+            
+def gen_text(text, speed, sleep, line):
+    print_text(text, speed)
+    time.sleep(sleep)
+    skip_line(line)
 
 def press_continue():
     ckey = input("Press enter to continue:")
     while ckey != "":
         ckey = input("Press enter to continue:")
     print("-----------------------""\n")
-
-def gen_text(printfast, printslow, sleep, line):
-    print_text(printfast, printslow)
-    time.sleep(sleep)
-    skip_line(line)
     
 def saving_checkpoint():
     for x in range (0,4):  
@@ -68,427 +113,521 @@ def return_checkpoint():
     clr_scr()
 
 
-# Player choice function
+# ### Player choice functions
 
-# In[3]:
+# In[76]:
 
 
-def choice_4(question, option1, option2, option3, option4, output1, output2, output3, output4, sleep, line):
-    gen_text(question, 0, 2, 0)
-    #Prints the different choice options
-    if option1 != 0:
-        print("1. ", end = "")
-        gen_text(option1, 0, 0, 0)
-    if option2 != 0:
-        print("2. ", end = "")
-        gen_text(option2, 0, 0, 0)
-    if option3 != 0:
-        print("3. ", end = "")
-        gen_text(option3, 0, 0, 0)
-    if option4 != 0:
-        print("4. ", end = "")
-        gen_text(option4, 0, 0, 0)
-    gen_text("5. ...", 0, 0, 0)
+def choice_yes_no(dialog, output1, output2, speed, sleep, line):
+    if dialog != 0:
+        gen_text(dialog, speed, sleep, line)
     #Defines the available choices
-    choice_1 = ['1', 'one', 'first']
-    choice_2 = ['2', 'two', 'second']
-    choice_3 = ['3', 'three', 'third']
-    choice_4 = ['4', 'four', 'fourth', 'last']
-    choice_5 = ['5', 'five', 'fifth', '...']
     #Starts infinite loop to compare the user input to the available choices
     #Then adds 1 to the house value and exits loop
+    x = 1
     while True:
-        global ckey
-        ckey = input("> ").lower()
-        time.sleep(2)
-        print("")
-        if ckey in choice_1:
-            ckey = 1
-            gen_text(output1, 0, sleep, line)
-            return ckey
-        elif ckey in choice_2:
-            ckey = 2
-            gen_text(output2, 0, sleep, line)
-            return ckey
-        elif ckey in choice_3:
-            ckey = 3
-            gen_text(output3, 0, sleep, line)
-            return ckey
-        elif ckey in choice_4:
-            ckey = 4
-            gen_text(output4, 0, sleep, line)
-            return ckey
-        #If one of the available choices was not a valid input,
-        #cycles back through loop
-        else:
-            print(random.choice(["Not a valid option."]))
-
-def yes_no(question, output1, output2, sleep, line):
-    gen_text(question, 0, 1, 0)
-    gen_text("1. Yes.", 0, 0, 0)
-    gen_text("2. No.", 0, 0, 0)
-    gen_text("3. ...", 0, 0, 0)
-    #Defines the available choices
-    choice_1 = ['1', 'one', 'first', 'yes']
-    choice_2 = ['2', 'two', 'second', 'no']
-    choice_3 = ['3', 'three', 'third', '...']
-    #Starts infinite loop to compare the user input to the available choices
-    #Then adds 1 to the house value and exits loop
-    while True:
-        global ckey
-        ckey = input("> ").lower()
+        player_input = input(">>> ").lower().strip()
         time.sleep(1)
-        if ckey in choice_1:
-            ckey = 1
-            gen_text(output1, 0, sleep, line)
-            return ckey
-        elif ckey in choice_2:
-            ckey = 2
-            gen_text(output2, 0, sleep, line)
-            return ckey
-        elif ckey in choice_3:
-            ckey = 3
-            gen_text(output2, 0, sleep, line)
-            return ckey
-        #If one of the available choices was not a valid input,
-        #cycles back through loop
-        else:
-            print(random.choice(["Not valid input."]))
+        if player_input == 'y' or player_input == 'yes':
+            player_input = 'y'
+            gen_text(output1, speed, sleep, line)
+            return player_input
+        elif player_input == 'n' or player_input == 'no':
+            player_input = 'n'
+            gen_text(output2, speed, sleep, line)
+            return player_input
+        elif player_input in help_options:
+            return_variable = help_commands(player_input)
+            if return_variable == 'break':
+                break
+        elif x < 3:
+            print("Not a valid option.")
+            x += 1
+            continue
+        elif x == 3:
+            print("Type 'help' for available commands.")
+            x = 0
+            continue
 
-# yes_no("test", 'testout1', 'testout2', 0, 0)
+def choice_two(dialog, option1, option2, output1, output2, speed, sleep, line):
+    while True:
+        if dialog != 0:
+            gen_text(dialog, speed, sleep, line)
+        #Prints the different choice options
+        if option1 != 0:
+            print("1. ", end = "")
+            gen_text(option1, speed, sleep, line)
+        if option2 != 0:
+            print("2. ", end = "")
+            gen_text(option2, speed, sleep, line)
+        gen_text("3. ...", speed, sleep, line)
+        #Defines the available choices
+        choice_1 = ['1', 'one', 'first']
+        choice_2 = ['2', 'two', 'second']
+        choice_3 = ['3', 'three', 'third', '...']
+        #Starts infinite loop to compare the user input to the available choices
+        #Then adds 1 to the house value and exits loop
+        x = 1
+        while True:
+            player_input = input(">>> ").lower().strip()
+            time.sleep(1)
+            print("")
+            if player_input in choice_1:
+                player_input = 1
+                gen_text(output1, speed, sleep, line)
+                return player_input
+            elif player_input in choice_2:
+                player_input = 2
+                gen_text(output2, speed, sleep, line)
+                return player_input
+            elif player_input in choice_3:
+                help_list()
+                continue
+                x = 0
+            elif player_input in help_options:
+                return_variable = help_commands(player_input)
+                if return_variable == 'break':
+                    break
+            elif x < 3:
+                print("Not a valid option.")
+                x += 1
+                continue
+            elif x == 3:
+                print("Type 'help' for available commands.")
+                x = 0
+                continue
+
+def choice_four(dialog, option1, option2, option3, option4, output1, output2, output3, output4, speed, sleep, line):
+    while True:
+        if dialog != 0:
+            gen_text(dialog, speed, sleep, line)
+        #Prints the different choice options
+        if option1 != 0:
+            print("1. ", end = "")
+            gen_text(option1, speed, sleep, line)
+        if option2 != 0:
+            print("2. ", end = "")
+            gen_text(option2, speed, sleep, line)
+        if option3 != 0:
+            print("3. ", end = "")
+            gen_text(option3, speed, sleep, line)
+        if option4 != 0:
+            print("4. ", end = "")
+            gen_text(option4, speed, sleep, line)
+        gen_text("5. ...", speed, sleep, line)
+        #Defines the available choices
+        choice_1 = ['1', 'one', 'first']
+        choice_2 = ['2', 'two', 'second']
+        choice_3 = ['3', 'three', 'third']
+        choice_4 = ['4', 'four', 'fourth', 'last']
+        choice_5 = ['5', 'five', 'fifth', '...']
+        #Starts infinite loop to compare the user input to the available choices
+        #Then adds 1 to the house value and exits loop
+        while True:
+            player_input = input(">>> ").lower().strip()
+            time.sleep(1)
+            print("")
+            if player_input in choice_1:
+                player_input = 1
+                gen_text(output1, speed, sleep, line)
+                return player_input
+            elif player_input in choice_2:
+                player_input = 2
+                gen_text(output2, speed, sleep, line)
+                return player_input
+            elif player_input in choice_3:
+                player_input = 3
+                gen_text(output3, speed, sleep, line)
+                return player_input
+            elif ckplayer_inputey in choice_4:
+                player_input = 4
+                gen_text(output4, speed, sleep, line)
+                return player_input
+            elif player_input in choice_5:
+                help_list()
+                continue
+                x = 0
+            elif player_input in help_options:
+                return_variable = help_commands(player_input)
+                if return_variable == 'break':
+                    break
+            elif x < 3:
+                print("Not a valid option.")
+                x += 1
+                continue
+            elif x == 3:
+                print("Type 'help' for available commands.")
+                x = 0
+                continue
+                
+def are_you_sure():
+    gen_text("Are you sure? y/n.", .05, 0, 0)
+    player_input = input(">>> ").lower().strip()
+    time.sleep(1)
+    if player_input == 'y' or player_input == 'yes':
+        return
+    elif player_input == 'n' or player_input == 'no':
+        return 'break'
 
 
-# Health Functions
+# ### Health Functions
 
-# In[4]:
+# In[77]:
 
 
 #Health Version 2
-current_health = 100
-max_health = 100
-
 def health():
-    global current_health
     if current_health > 75:
-        print("Health: Good\n--------------------")
+        print("Health: Good")
         return
     elif current_health > 50:
-        print("Health: Weakened\n--------------------")
+        print("Health: Weakened")
         return
     elif current_health > 25:
-        print("Health: Very Weak\n--------------------")
+        print("Health: Very Weak")
         return
     elif current_health > 0:
-        print("Health: Critical\n--------------------")
+        print("Health: Critical")
         return
-
-medpack_num = 0
-medpack_plus = 0
-medpack_plusplus = 0
 
 def medpack():
     global current_health
-    global max_health
-    global medpack_num
-    global medpack_plus
-    global medpack_plusplus
-    
     #Displays Health and Medpack status
     health()
+    medpack_num = 0
+    for inv_item in list(inventory.keys()):    
+        if inv_item == 'Medpack':
+            for inv_stack in inventory[inv_item]:
+                medpack_num += inv_stack
     print("Medpacks: "+str(medpack_num)+"\n--------------------")
+        
     
     #Medpack use loop
     if medpack_num == 0:
-        gen_text("You have no medpacks.", 0, 0, 1)
+        gen_text("You have no medpacks.", .05, .5, 1)
     else:
-        yes_no("Use a medpack?", 0, 0, 0, 0)
-        if ckey == 1:
+        player_input = choice_yes_no("Use a medpack? y/n.", 0, 0, 0, .2, 0)
+        if player_input == 'y':
             if current_health == max_health:
                 print("Your health is already full!")
                 return
             current_health += 15+medpack_plus+medpack_plusplus
-            medpack_num -= 1
+            inventory_remove('Medpack', 1)
             if current_health > max_health:
                 current_health = max_health
             health()
-            print("Medpacks: "+str(medpack_num)+"\n--------------------")
+            return
+        elif player_input == 'n':
             return
 
 
-# Energy Functions
+# ### Energy Functions
 
-# In[5]:
+# In[78]:
 
 
 #Energy Version 2
-current_energy = 100
-max_energy = 100
-
 def energy():
     global current_energy
     if current_energy > 75:
-        print("Energy: High\n--------------------")
+        print("Energy: High")
         return
     elif current_energy > 50:
-        print("Energy: Moderate\n--------------------")
+        print("Energy: Moderate")
         return
     elif current_energy > 25:
-        print("Energy: Low\n--------------------")
+        print("Energy: Low")
         return
     elif current_energy > 0:
-        print("Energy: Very Low\n--------------------")
+        print("Energy: Very Low")
         return
-
-booster_num = 2
-booster_plus = 0
-booster_plusplus = 0
 
 def booster():
     global current_energy
-    global max_energy
-    global booster_num
-    global booster_plus
-    global booster_plusplus
-    
     #Displays Energy and Booster status
     energy()
+    booster_num = 0
+    for inv_item in list(inventory.keys()):    
+        if inv_item == 'Booster':
+            for inv_stack in inventory[inv_item]:
+                booster_num += inv_stack
     print("Boosters: "+str(booster_num)+"\n--------------------")
+        
     
-    #Booster use loop
+    #Medpack use loop
     if booster_num == 0:
-        gen_text("You have no boosters.", 0, 0, 1)
+        gen_text("You have no boosters.", .05, .5, 1)
     else:
-        yes_no("Use a booster?", 0, 0, 0, 0)
-        if ckey == 1:
+        player_input = choice_yes_no("Use a booster? y/n.", 0, 0, 0, .2, 0)
+        if player_input == 'y':
             if current_energy == max_energy:
                 print("Your energy is already full!")
                 return
             current_energy += 15+booster_plus+booster_plusplus
-            booster_num -= 1
+            inventory_remove('Booster', 1)
             if current_energy > max_energy:
                 current_energy = max_energy
             energy()
-            print("Boosters: "+str(booster_num)+"\n--------------------")
+            return
+        elif player_input == 'n':
             return
 
 
-# Inventory
+# ### Inventory
 
-# In[19]:
-
-
-#Inventory
-# inventory_dict = {items.medpack.name:1, items.element.name:8, items.booster.name:2, items.pipe.name:1}
-inventory_dict = {}
-
-#Keys
-equip_keys = []
-
-#Equipment Variables
-equip_weapon = items.fists
-equip_armor = items.no_armor
-equip_pack = items.pack_none
-
-#Inventory variables
-inv_default = 6
-inv_max = inv_default + equip_pack.slots
-current_inv = len(inventory_dict)
-
-#Create inventory CSV from dictionary.
-def create_inv_csv():
-    file = open('inventory.csv', 'w')
-    writer = csv.DictWriter(file, fieldnames=['Item', 'Number'])
-    writer.writeheader()
-    for key, value in inventory_dict.items():
-        writer.writerow({'Item' : key, 'Number': value})
-    file.close()
-
-create_inv_csv()
+# In[79]:
 
 
-# In[21]:
+def current_inv_num():
+    x = 0
+    for items, stacks in inventory.items():
+        for stack in stacks:
+            x += 1
+    return x
 
-
-def open_create_inventory():
-    #Open existing inventory.
-    old_inv_file = open('inventory.csv', 'r')
-    old_inv_read = csv.DictReader(old_inv_file, fieldnames=['Item', 'Number'])
-    #Create new inventory file.
-    new_inv_file = open('inventory_new.csv', 'w')
-    new_inv_write = csv.DictWriter(new_inv_file, fieldnames=['Item', 'Number'])
-    return old_inv_file, old_inv_read, new_inv_file, new_inv_write
-
-def close_inventory(file_1, file_2):
-    file_1.close()
-    file_2.close()
-
-def adding_item(item, new_item_amount):
-    global current_inv
-    global inv_max
+def inventory_list():
+    if len(equip_keys) > 0:
+        print(f"Keys: {', '.join(equip_keys)}")
+    else:
+        print(f"Keys: None")
+    current_inv = current_inv_num()
+    print(f"Inventory: {current_inv}/{inv_max}")
+    print("-----------------------------")
+    if current_inv == 0:
+        print("Your inventory is empty.")
+    else:
+        x = 1
+        for item, stacks in inventory.items():
+            for stack in stacks:
+                print(f"{x}. {item} - {stack}")
+                x += 1
+    print("-----------------------------")
     
-    #First test.
-    if item.stack == 1 and current_inv == inv_max:
+def inventory_list_short():
+    if len(equip_keys) > 0:
+        print(f"Keys: {', '.join(equip_keys)}")
+    else:
+        print(f"Keys: None")
+    current_inv = current_inv_num()
+    print(f"Inventory: {current_inv}/{inv_max}")
+    print("-----------------------------")
+
+
+# In[80]:
+
+
+# Find the item in the dictionaries.
+def inventory_find(new_item):
+    if new_item in weapon:
+        item_dictionary = weapon
+        stack_max = 1
+    elif new_item in consumable:
+        item_dictionary = consumable
+        stack_max = consumable[new_item]
+    return item_dictionary, stack_max
+
+def inventory_find_player_input(player_input):
+    for inv_item in list(inventory.keys()):    
+        row = 1
+        if row == player_input:
+            print(inv_item)
+            return inv_item
+
+# Add item to inventory.
+def inventory_add(new_item, new_item_amount):
+    current_inv = current_inv_num()
+    item_dictionary, stack_max = inventory_find(new_item)
+    
+    # Check for full inventory.
+    if item_dictionary[new_item] == 1 and current_inv == inv_max:
         print("Your inventory is full.")
         return new_item_amount
+       
+    # If item in inventory, increase item stack if possible.
+    for inv_item, inv_stacks in inventory.items():    
+        stack_index = 0
+        if inv_item == new_item:
+            for inv_stack in inv_stacks:
+                while new_item_amount > 0 and inventory[new_item][stack_index] < stack_max:
+                    inventory[new_item][stack_index] += 1
+                    new_item_amount -= 1
+                stack_index += 1
     
-    #Open inventory files.
-    old_inv_file, old_inv_read, new_inv_file, new_inv_write = open_create_inventory()
-    
-    #Start inventory process.
-    for row in old_inv_read:
-        if row['Item'] != item.name or row['Item'] == item.name and int(row['Number']) == item.stack:
-            new_inv_write.writerow(row)
-            continue         
-        #Item was found and stack not full.
-        elif row['Item'] == item.name and int(row['Number']) < item.stack:  
-            new_item_amount += int(row['Number'])     
-            if new_item_amount >= item.stack:
-                new_inv_write.writerow({'Item' : item.name, 'Number' : item.stack})
-                new_item_amount -= item.stack    
-                continue
-            elif new_item_amount < item.stack:
-                new_inv_write.writerow({'Item' : item.name, 'Number' : new_item_amount})
-                continue
-    #After inventory has been copied and any possible stacking done.
+    # Adding item to a new slot.
     while current_inv < inv_max:
         if new_item_amount == 0:
             break
-        if new_item_amount > item.stack:
-            new_inv_write.writerow({'Item' : item.name, 'Number' : item.stack})
-            current_inv += 1
-            new_item_amount -= item.stack
-        elif new_item_amount <= item.stack and new_item_amount != 0:
-            new_inv_write.writerow({'Item' : item.name, 'Number' : new_item_amount})
-            current_inv += 1
-            new_item_amount -= new_item_amount    
-    #Last check.
+        if new_item not in inventory:
+            if new_item_amount > stack_max:
+                inventory[new_item] = [stack_max]
+                current_inv += 1
+                new_item_amount -= stack_max
+            elif new_item_amount <= stack_max and new_item_amount > 0:
+                inventory[new_item] = [new_item_amount]
+                current_inv += 1
+                new_item_amount -= new_item_amount  
+        if new_item in inventory:
+            if new_item_amount > stack_max:
+                inventory[new_item] += [stack_max]
+                current_inv += 1
+                new_item_amount -= stack_max
+            elif new_item_amount <= stack_max and new_item_amount > 0:
+                inventory[new_item] += [new_item_amount]
+                current_inv += 1
+                new_item_amount -= new_item_amount            
+            
+    # Last check.
     if new_item_amount > 0:
         print("Your inventory is full.")
-      
-    close_inventory(old_inv_file, new_inv_file)    
-    os.remove('inventory.csv')
-    os.rename('inventory_new.csv', 'inventory.csv')   
+        
     return new_item_amount
-   
 
-print(adding_item(items.booster, 5))
-
-
-# In[18]:
-
-
-def create_dict_from_file(file):
-    for row in file:
-        #Ignore header.
-        if row['Item'] == 'Item':
-            continue
+# Remove item from inventory.
+def inventory_remove(item_name, amount_to_remove):
+    for inv_item in list(inventory):    
+        stack_index = 0
+        if inv_item == item_name:
+            for inv_stack in inventory[inv_item]:
+                while amount_to_remove > 0 and inventory[item_name][stack_index] > 0:                        
+                    inventory[item_name][stack_index] -= 1
+                    amount_to_remove -= 1
+                    if inventory[item_name][stack_index] == 0 and len(inventory[item_name]) > 1:
+                        del inventory[item_name][stack_index]
+                    elif inventory[item_name][stack_index] == 0 and len(inventory[item_name]) == 1:
+                        del inventory[item_name]
+                        break
+                stack_index += 1
+                
+def inventory_sort():
+    global inventory
+    temp_inventory = {}
+    sorted_inventory = sorted(inventory)
+    for item in sorted_inventory:
+        for value in sorted(inventory[item], reverse=True):
+            if item in temp_inventory:
+                temp_inventory[item] += [value]
+            else:
+                temp_inventory[item] = [value]
+    inventory = temp_inventory
+    
+def item_use(item):    
+    if item in consumable:
+        if item == 'Medpack':
+            medpack()
+            return
+        elif item == 'Booster':
+            booster()
+            return
         else:
-            temp_keys += [row['Item']]
-            temp_values += [row['Number']]
-
-def create_inv_temp_dict(file):
-    #Compile inventory into a dictionary.
-    temp_keys = []
-    temp_values = []
-    temporary_dict = {}    
-    n = 0
-    #Create key, value lists.
-    for row in file:
-        #Ignore header.
-        if row['Item'] == 'Item':
+            gen_text("That item has no use here.", .03, 0, 0)
+    elif item not in inventory:
+        gen_text("You do not have this item.", .03, 0, 0)
+        return
+    elif item not in consumable:
+        gen_text("This item is not usable.", .03, 0, 0)
+        return
+    
+# Allows player to add/remove/sort inventory.
+def inventory_manage():
+    inventory_list()
+    print("Use | Delete | Sort | Back")
+    print("-----------------------------")
+    x = 1
+    while True:
+        player_input = input(">>> ")
+        player_input = player_input.lower().strip()
+        if player_input[:3] == 'use':
+            gen_text("Use which item?", .03, 0 ,0)
+            while True:
+                player_item = ''                
+                player_input_item = input(">>> ")
+                if player_input in help_options:
+                    return_variable = help_commands(player_input)
+                    if return_variable == 'break':
+                        break
+                try:
+                    player_input_item = int(player_input_item)
+                    inv_item = inventory_find_player_input(player_input_item)
+                except ValueError:
+                    player_input_item = player_input_item.lower().strip()
+                    inv_item = player_input_item.capitalize()
+                if inv_item not in inventory:
+                    gen_text("You don't have that item.", .03, 0 ,0)
+                    continue
+                item_use(inv_item)
+                break
+        elif player_input[:3] == 'del':
+            gen_text("Delete which item?", .03, 0 ,0)
+            while True:                
+                player_input = input(">>> ")
+                player_input = player_input.lower().strip()
+                try:
+                    player_input_item = int(player_input)
+                    inv_item = inventory_find_player_input(player_input_item)
+                except ValueError:
+                    player_input_item = player_input.lower().strip()
+                    inv_item = player_input_item.capitalize()
+                if inv_item not in inventory:
+                    gen_text("You don't have that item.", .03, 0 ,0)
+                    continue
+                gen_text("How many?", .03, 0 ,0)
+                while True:
+                    player_input = input(">>> ").lower().strip()
+                    if player_input in help_options:
+                        return_variable = help_commands(player_input)
+                        if return_variable == 'break':
+                            break
+                    try:
+                        player_input_num = int(player_input)
+                        break
+                    except ValueError:
+                        gen_text("Enter a number.", .03, 0 ,0)
+                        continue
+                        break     
+                return_variable = are_you_sure()
+                if return_variable == 'break':
+                    break
+                inventory_remove(inv_item, player_input_num)
+                break
+        elif player_input[:4] == 'sort':
+            inventory_sort()
+            inventory_manage()
+            return
+        elif player_input[:4] == 'back':
+            return
+        elif player_input in help_options:
+            return_variable = help_commands(player_input)
+            if return_variable == 'break':
+                break
+        elif x < 3:
+            gen_text("Not a valid option.", .03, 0 ,0)
+            x += 1
             continue
-        else:
-            temp_keys += [row['Item']]
-            temp_values += [row['Number']]
-    #Create dictioary.
-    for i in temp_keys:
-        if i not in temporary_dict:
-            temporary_dict[temp_keys[n]] = [temp_values[n]]
-            n += 1
-        elif i in temporary_dict:
-            temporary_dict[temp_keys[n]] += [temp_values[n]]
-            n += 1
-        #Sorts temp_keys list.
-    temp_keys.sort() 
-    return temp_keys, temporary_dict
-
-def sort_inv_dict():
-    #Open files.
-    old_inv_file, old_inv_read, new_inv_file, new_inv_write = open_create_inventory()
-    #Creates a dictionary from inventory.csv.
-    temp_keys, temporary_dict = create_inv_temp_dict(old_inv_read)
-    for key in temporary_dict:
-        for value in temporary_dict[key]:
-            new_inv_write.writerow({'Item' : key, 'Number' : value})
-        # if i not in temporary_dict:
-        #     new_inv_write.writerow({'Item' : i, 'Number' : item.stack})
-        # elif i in temporary_dict:
-        #     new_inv_write.writerow({'Item' : item.name, 'Number' : item.stack})
-            
-    close_inventory(old_inv_file, new_inv_file)    
-    os.remove('inventory.csv')
-    os.rename('inventory_new.csv', 'inventory.csv')   
-
-sort_inv_dict()
-    
-    
+        elif x == 3:
+            gen_text("Type 'help' for available commands.", .03, 0 ,0)
+            x = 0
+            continue
+        continue
+        
+# inventory_manage()
 
 
-# In[51]:
+# In[81]:
 
 
-diction = ['blah', 'blah', 'item', 'item']
-diction_num = [1, 2, 1, 3]
-new_dict = {}
-n=0
-for i in diction:
-    if i not in new_dict:
-        new_dict[diction[n]] = [diction_num[n]]
-        n+=1
-    elif i in new_dict:
-        print('test')
-        new_dict[diction[n]] += [diction_num[n]]
-        n+=1
-print(new_dict)
-
-for key in new_dict:
-    for value in new_dict[key]:
-        print(key, value)
+# Make Test Inventory
+inventory = {}
+inventory['Medpack'] = [1]
+inventory['Element'] = [5]
+inventory['Booster'] = [2, 3]
+# inventory_list()
 
 
-# In[8]:
+# ### Equipment and Pack Displays
+
+# In[82]:
 
 
-#Display Inventory
-def show_inventory():
-    global equip_keys
-    global inventory_dict
-    global inv_default
-    global current_inv
-    global equip_keys
-    print(f"Keys: {', '.join(equip_keys)}")
-    print(f"Inventory: {current_inv}/{inv_max}")
-    print("-----------------------------")
-    empty_bag_var = 0
-    num = 1
-    for key, value in inventory_dict.items():
-        if value > 0:
-            print(f"{num}. {key} - x{value}")
-            num += 1
-            empty_bag_var += 1
-    if empty_bag_var == 0:
-        print("Your inventory is empty.")
-    print("-----------------------------")
-
-#Display Inventory Status
-def inv_status():
-    global inv_plus
-    global inv_plusplus
-    global inv_max
-    global inventory_dict
-    global current_inv
-    print(f"Inventory: {current_inv}/{inv_max}\n--------------------")
-    
 def pack():
     print(f"Pack: {pack_list_keys[1]} + {pack_list_values[1]} Slots")
     print("-----------------------------")
@@ -506,235 +645,165 @@ def equipment():
         print(f"Suit: {equip_armor.name}, Armor: {equip_armor.armor}")
     print("-----------------------------")
 
-equipment()
-show_inventory()
+
+# ### Map Display
+
+# In[83]:
 
 
-# Psionic Functions
+def map_header():
+    print("-----------------------------------------------------------"); time.sleep(.2)
+    print(f'{"*: Player": <20} {"!: Enemies": <20} {"?: Items": <20}'); time.sleep(.2)
+    print(f'{"H: Health Station": <20} {"C: Comms": <20} {"T: Terminal": <20}'); time.sleep(.2)
+    print(f'{"W: Workbench": <20} {"V: Vendor": <20} {"N: NPC": <20}'); time.sleep(.2)
+    print(f'{"D: Door New": <20} {"L: Door Locked": <20} {"U: Door Unlocked": <20}'); time.sleep(.2)
+    print("-----------------------------------------------------------"); time.sleep(.2)
 
-# In[8]:
+
+def display_map():
+    map_header()
+    with open(current_map) as map:
+        for line in map:
+            print(line, end='')
+            time.sleep(.1)
+    print('')
+            
+# display_map()
 
 
-psionics = ''
+# ### Help Options
 
-
-# Help List Functions
-
-# In[193]:
+# In[84]:
 
 
 def help_list():
     print("---------------------------------------------")
-    print("Available player commands:\n")
+    print("Available player commands:")
     print("help - Lists command options.")
-    print("stat - Displays Health, Energy, and Inventory Status.")
+    print("stat - Displays Health, Energy, and Equipment.")
     print("inv - Lists players inventory and equipped items.")
+    print("use - Use an item.")
     print("map - Displays the map.")
     print("log - Displays log files.")
     print("clear - Clears screen.")
+    print("back - Goes to previes menu if available.")
+    print("repeat - Repeats last dialog.")
+    print("save - Saves the game.")
+    print("exit - Exits the game.")
     print("---------------------------------------------")
     
 def status():
     health()
     energy()
-    inv_status()
-    # skills()
+    equipment()
+    inventory_list_short()
     
 def help_commands(player_input):
-    help_options = ['help', 'stat', 'inv', 'skill', 'map', 'clr']
     if player_input in help_options:
         if player_input == 'help':
             help_list()
         elif player_input == 'stat':
             status()
-        elif player_input == 'health':
-            health()
-        elif player_input == 'energy':
-            energy()
         elif player_input == 'inv':
-            equipment()
             inventory_list()
-        elif player_input == 'clr':
-            clr_scr()
+        elif player_input == 'map':
+            display_map()
+        elif player_input == 'log':
+            pass
+        elif player_input == 'repeat':
+            return 'break'
+        elif player_input == 'clear':
+            clrscr()
+        elif player_input == 'back':
+            return
+        elif player_input == 'save':
+            save_game_dialog()
+        elif player_input == 'exit':
+            exit_game()
     return
 
-# help_commands(input())
-# status()
-# inventory_list()
+
+# ### Saving game  - Incomplete
+
+# In[85]:
+
+
+def save_game():
+    pass
+
+def save_game_dialog():
+    while True:
+        player_input = input("Create new save 's', or overwrite 'o' existing? ")
+        player_input = player_input.lower().strip()
+        if player_input == 's' or player_input == 'new' or player_input == 'new save':
+            gen_text("Saving...", .1, 1, 1)
+            return
+        elif player_input == 'o' or player_input == 'overwrite':
+            gen_text("Creating new save...", .1, 1, 1)
+            return
+        continue
+
+# save_game_dialog()
+
+
+# ### Exiting game
+
+# In[86]:
+
+
+def exit_game():
+    while True:
+        player_input = input("Would you like to save before exiting? ")
+        player_input = player_input.lower().strip()
+        if player_input == 'yes' or player_input == 'y':
+            save_game()
+            sys.exit()
+        elif player_input == 'no' or player_input == 'n':
+            gen_text("Existing game...", .05, 0, 0)
+            sys.exit()
+
+# exit_game()
+
+
+# ### Combat
+
+# In[ ]:
+
+
+
+
+
+# ### Test Game
+
+# In[87]:
+
+
+player_game_state = 1
+
+
+# In[88]:
+
+
+# gen_text("A choose your own adventure:".center(50), .05, 0, 1)
+# gen_text("Space Game".center(50), .1, 0, 1)
+# gen_text("A Python Production".center(50), .05, 0, 1)
 # help_list()
-
-
-# Use Items
-
-# In[ ]:
-
-
-
-
-
-# Test Environment
-
-# In[ ]:
-
-
-
-
-
-# In[ ]:
-
-
-
-
-
-# In[ ]:
-
-
-
-
-
-# In[ ]:
-
-
-
-
-
-# In[ ]:
-
-
-
-
-
-# In[ ]:
-
-
-
-
-
-# In[ ]:
-
-
-
-
-
-# In[ ]:
-
-
-
-
-
-# Game Start
-
-# In[194]:
-
-
-choose_your_own = "Choose your own adventure:"
-alone_on_mars = "Space Game"
-angry_pom = "A Python Production"
-gen_text(choose_your_own.center(50), 0, 0, 1)
-gen_text(0, alone_on_mars.center(50), 0, 1)
-gen_text(angry_pom.center(50), 0, 0, 1)
-print("\n")
-help_list()
-print("\n\n")
-press_continue()
-
-
-# Introduction
-
-# In[195]:
-
-
-# #clrscr()
-# intro = """You are a one of a few new recruits sent to a Mars colony financed
-# by United Habitation Group. You've been traveling 7 months, during which
-# time you've learned everything you would need to survive there."""
-# intro_2 = "At least you hope so...."
-
-# gen_text(intro, 0, 2, 1)
-# gen_text(intro_2, 0, 2, 1)
+# print("\n")
 # press_continue()
 
 
-# Second text
-
-# In[46]:
+# In[89]:
 
 
-# landing = "After a day of hectic unpacking, you settle into your room for a much needed rest..."
-# start_noise_1 = "*KABOOOOOOM!!!*"
-# what_happen = "You jump out of bed! Alarms start to blare and you hear people shouting!"
-# start_noise_2 = "*CRASH!*"
-# silence = "... ... ..."
+# dialog = "You awaken with a headache."
+# option1 = "Stay still and listen."
+# option2 = "Explore the room."
+# output1 = "All is quiet."
+# output2 = """The room is a mess, after picking your way around some fallen shelves,
+# something freezes the blood in your veins. You notice a foot sticking out from under one of the overturned shelves."""
+# choice_two(dialog, option1, option2, output1, output2, .05, .5, 0)
+# print('next')
 
-# gen_text(landing, 0, 2, 0)
-# gen_text(0, start_noise_1, 2, 0)
-# gen_text(what_happen, 0, 2, 0)
-# gen_text(start_noise_2, 0, 2, 0)
-# gen_text(0, silence, 2, 1)
-# press_continue()
-
-
-# Chapter 1 - Awakening<br>
-# Checkpoint 1<br>
-# First set of choices to leave current room.<br>
-
-# In[47]:
-
-
-#First checkpoint loop
-#clrscr()
-saving_checkpoint()
-while True:
-    gen_text(0, "Chapter 1 - Awakening", 2, 1)
-    global ckey
-    #First question
-    awake = "You awake in darkness with a splitting headache. All is silent..."
-    question_1 = "What do you do?"
-    option1 = "Try and feel your way around."
-    option2 = "Stay still and listen."
-    output1 = """You reach your hand up and touch your head, your hand comes away
-wet with blood. As you fumble your way around trying to get your bearings, you are
-quickly out of breath. The room feels hotter than you remembered. Finally, you touch a
-door handle."""
-    output2 = """You instinctively lay still, listening. You hear nothing, but you notice the
-air is warmer than you remember, and it feel like you can't quite get enough air.
-Reaching up to feel your head, your hand comes away wet with blood."""
-    gen_text(awake, 0, 2, 0)
-    choice_4(question_1, option1, option2, 0, 0, output1, output2, 0, 0, 1, 0)
-    print(ckey)
-    
-    #Option 2 continuation
-    option1 = "Get up."
-    option2 = "Keep lying still."
-    output1 = """Summoning your courage, you start moving. Slowly feeling your way around, 
-you eventually find a door handle."""
-    output2 = """Fear grips you. What has happened? All different scenarios run through your head, 
-none have good outcomes. Every little noise now is loaded with dread possibilities.
-How much time has gone by?"""
-    if ckey == 2:
-        choice_4(question_1, option1, option2, 0, 0, output1, output2, 0, 0, 1, 0)
-        
-        #Option 2 further continuation
-        option1 = "Time for action!"
-        option2 = "It's best to just wait for help."
-        output1 = """Finally summoning your courage, you start moving. Slowly feeling your way around, 
-you eventually find a door handle."""
-        output2 = """You pull your knees up to your chest. Someone will come to help, you're sure of it.
-You start to feel light headed, and the air is getting even warmer. It's comforting in a strange way.
-A sense of calm comes over you; yes...someone will come. Eventually you doze off."""
-        print(ckey)
-        if ckey == 2:
-            choice_4(question_1, option1, option2, 0, 0, output1, output2, 0, 0, 1, 0)
-            if ckey == 2:
-                gen_text(0, "Game Over", 3, 0)
-                return_checkpoint()
-            continue
-    break
-
-
-# Chapter - Leaving Safety<br>
-# Checkpoint 1<br>
-# First set of choices to leave current room.<br>
 
 # In[ ]:
 
